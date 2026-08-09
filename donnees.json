@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-09T13:58:05.824Z",
+  "updatedAt": "2026-08-09T13:58:23.398Z",
   "players": [
     {
       "id": "c5912481-899b-4a08-859e-621c94eff2e2",
@@ -161,53 +161,12 @@
       "pagesSize": 293819
     },
     "2026-05": {
-      "lines": [
-        {
-          "description": "- Dimanche 03/05/2026 18:00-20:00 - H134 - Badminton",
-          "amount": 27
-        },
-        {
-          "description": "- Dimanche 10/05/2026 18:00-20:00 - H134 - Badminton",
-          "amount": 27
-        },
-        {
-          "description": "- Dimanche 10/05/2026 18:00-20:00 - H133 - Badminton",
-          "amount": 27
-        },
-        {
-          "description": "- Dimanche 17/05/2026 18:00-20:00 - H133 - Badminton",
-          "amount": 27
-        },
-        {
-          "description": "- Dimanche 17/05/2026 18:00-20:00 - H132 - Badminton",
-          "amount": 27
-        },
-        {
-          "description": "- Dimanche 17/05/2026 18:00-20:00 - H134 - Badminton",
-          "amount": 27
-        },
-        {
-          "description": "- Lundi 25/05/2026 18:00-20:00 - H122",
-          "amount": 27
-        },
-        {
-          "description": "- Dimanche 31/05/2026 18:00-20:00 - H134 - Badminton",
-          "amount": 27
-        },
-        {
-          "description": "- Dimanche 31/05/2026 18:00-20:00 - H132 - Badminton",
-          "amount": 27
-        },
-        {
-          "description": "- Dimanche 31/05/2026 18:00-20:00 - H133 - Badminton",
-          "amount": 27
-        }
-      ],
+      "lines": [],
       "fileName": "INVOICE1246491181.pdf"
     }
   },
   "paymentEnc": {
-    "iv": "9d8D6VMsuKeFbE-w",
-    "data": "KtPmcXKW2H1JE35yIWXttBuAzgptUuvUCIdHG3X9Ta_2g42feO2GReyCqriAjthJd3r8k-CDvQl9Iq64R55Q5v7-L_ApE88ZqfRjJJSEkFLYF-Kloe9VtA8"
+    "iv": "OsdhnWXojtkzbPFy",
+    "data": "w9WCvjBtq0aT6-toNrUBmHA2eYfYA6ob4lFWWzXWHNQbPRkcaO9v5-1t18R_VrZOtLIZMn5nxJIV6BjOdvq2Xcuv2R13-kkm4QhYLQ2Go-rfZknvUBpLUGw"
   }
 }
