@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-09T13:15:15.922Z",
+  "updatedAt": "2026-08-09T13:36:53.910Z",
   "players": [
     {
       "id": "c5912481-899b-4a08-859e-621c94eff2e2",
@@ -60,7 +60,7 @@
     },
     {
       "id": "8d478aec-4fc3-4f73-85e3-f29505ebabe4",
-      "name": "Manu 1"
+      "name": "Manu Bot"
     },
     {
       "id": "058c45f9-157b-45e5-b53d-1d9bb12c0a66",
@@ -160,7 +160,7 @@
     }
   },
   "paymentEnc": {
-    "iv": "Zz-2A5wd7b8RiCg1",
-    "data": "Bz7VSUux50ITp7Cpty6pA-av7F8h93lDuzXP0z_ZNZJYPzOWnUQe1oEP3bJP6HMHUXaoD4KBz8festDIoOThcwsqGCWrd-LD5rFCyOTEIsRwjwiUdVRAkt0"
+    "iv": "P9LFSPA7_Ba-Ja_V",
+    "data": "uzdZSqC66GtnFpwrzrs9txGk9OYs9bOPXWbsc571oP4cBNmbGbc8Em_eH1jt_ClK6O7O1i1F2ke0vvlJpUBUDyw9pSrznhTqZpn7aLZPtgZteQWWRRNKLQM"
   }
 }
