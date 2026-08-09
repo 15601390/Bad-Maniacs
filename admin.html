@@ -1547,7 +1547,13 @@ function renderSyncSettings() {
     suspendrePublication = true;
     saveState();
     suspendrePublication = false;
-    setSyncStatus(syncConfigured() ? "Réglages complets." : "Réglages incomplets.");
+    if (syncConfigured()) {
+      // Les réglages viennent d'être complétés : si l'appareil est vide, on
+      // charge sans attendre un rechargement de page.
+      chargerSiVide();
+    } else {
+      setSyncStatus("Réglages incomplets.");
+    }
   });
 });
 
@@ -1722,11 +1728,29 @@ async function importFromText(text, source) {
     return false;
   }
 
-  state = { ...parsed, payment: { ...DEFAULT_PAYMENT, ...(parsed.payment || {}) } };
+  // Un import remplace les données, jamais les réglages de cet appareil :
+  // les champs vides du fichier ne doivent pas effacer un IBAN ou un jeton déjà saisis.
+  const fusionner = (actuel, importe) => {
+    const sortie = { ...actuel };
+    Object.entries(importe || {}).forEach(([k, v]) => {
+      if (v !== "" && v !== null && v !== undefined) sortie[k] = v;
+    });
+    return sortie;
+  };
+
+  state = {
+    players: parsed.players,
+    attendance: parsed.attendance,
+    invoices: parsed.invoices,
+    payment: fusionner(state.payment, parsed.payment),
+    sync: fusionner(state.sync, parsed.sync),
+  };
   saveState();
   renderJoueurs();
   renderPointage();
   renderPaymentSettings();
+  renderSyncSettings();
+  renderFacturation();
   status.textContent = `✓ ${nbJoueurs} joueur(s) et ${nbDates} pointage(s) importés depuis ${source}.`;
   return true;
 }
@@ -1787,12 +1811,19 @@ renderPaymentSettings();
 renderSyncSettings();
 setSyncStatus(syncConfigured() ? "Synchronisation active." : "Synchronisation non configurée.");
 
-// Au démarrage, un appareil vide adopte silencieusement les données en ligne.
+// Un appareil vide adopte les données en ligne : au démarrage, et aussi dès que
+// les réglages sont complétés (sinon il faudrait recharger la page).
 // C'est ce qui rend l'app jetable : les données vivent sur GitHub, pas ici.
-(async function demarrage() {
-  if (!syncConfigured()) return;
+let chargementEnCours = false;
+
+async function chargerSiVide() {
+  if (!syncConfigured() || chargementEnCours) return;
   const vide = state.players.length === 0 && Object.keys(state.attendance).length === 0;
-  if (!vide) return;
+  if (!vide) {
+    setSyncStatus("Synchronisation active.");
+    return;
+  }
+  chargementEnCours = true;
   setSyncStatus("Chargement des données en ligne…");
   try {
     const fichier = await ghGetFile();
@@ -1819,8 +1850,12 @@ setSyncStatus(syncConfigured() ? "Synchronisation active." : "Synchronisation no
   } catch (err) {
     console.error(err);
     setSyncStatus(`Chargement impossible : ${err.message}. Utilise « ↓ Récupérer depuis GitHub ».`);
+  } finally {
+    chargementEnCours = false;
   }
-})();
+}
+
+chargerSiVide();
 
 </script>
 </body>
