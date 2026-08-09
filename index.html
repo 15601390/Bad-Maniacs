@@ -306,29 +306,31 @@
 
   .table-scroll { overflow-x: auto; margin-top: 12px; }
 
-  #pdfZone {
-    margin-top: 12px;
+  #pdfZone { margin-top: 16px; }
+
+  .pdf-hint {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 8px;
+  }
+
+  .pdf-pages {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 12px;
   }
 
-  .pdf-btn {
-    background: var(--card);
-    border: 1px solid var(--court);
-    color: var(--court);
-    font-family: inherit;
-    font-size: 0.88rem;
-    font-weight: 600;
-    padding: 9px 14px;
+  .pdf-pages img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border: 1px solid var(--line);
     border-radius: 8px;
-    cursor: pointer;
+    background: #fff;
   }
-  .pdf-btn:hover { background: var(--court-soft); }
-  .pdf-btn:focus-visible { outline: 2px solid var(--court); outline-offset: 2px; }
-
-  .pdf-hint { font-size: 0.8rem; color: var(--muted); }
 
   table {
     width: 100%;
@@ -438,8 +440,8 @@
         </table>
       </div>
       <div id="pdfZone" hidden>
-        <button type="button" id="pdfOpenBtn" class="pdf-btn">📄 Ouvrir la facture originale (PDF)</button>
-        <span id="pdfHint" class="pdf-hint"></span>
+        <p class="pdf-hint" id="pdfHint"></p>
+        <div id="pdfPages" class="pdf-pages"></div>
       </div>
     </details>
   </section>
@@ -628,15 +630,6 @@
     }).join("") || '<tr><td colspan="3" class="empty">Aucun dimanche pointé.</td></tr>';
   }
 
-  function dataUrlToBlob(dataUrl) {
-    const [meta, b64] = dataUrl.split(",");
-    const mime = (meta.match(/:(.*?);/) || [])[1] || "application/pdf";
-    const bin = atob(b64);
-    const bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    return new Blob([bytes], { type: mime });
-  }
-
   function renderInvoice(s) {
     const tbody = document.querySelector("#invoiceTable tbody");
     tbody.innerHTML = s.invoice.lines.map((l) =>
@@ -644,24 +637,24 @@
     ).join("") || '<tr><td colspan="2" class="empty">Facture pas encore encodée.</td></tr>';
     document.getElementById("invoiceTotal").textContent = formatEUR(s.total);
 
+    // La facture est publiée en images : consultable partout, sans téléchargement.
     const zone = document.getElementById("pdfZone");
-    const pdf = s.invoice.pdfData;
-    zone.hidden = !pdf;
-    if (!pdf) return;
+    const pages = s.invoice.pages || [];
+    zone.hidden = pages.length === 0;
+    if (!pages.length) return;
 
-    document.getElementById("pdfHint").textContent = s.invoice.fileName || "";
-    document.getElementById("pdfOpenBtn").onclick = () => {
-      const url = URL.createObjectURL(dataUrlToBlob(pdf));
-      const opened = window.open(url, "_blank");
-      if (!opened) {
-        // fenêtre bloquée : on bascule sur le téléchargement
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = s.invoice.fileName || "facture.pdf";
-        a.click();
-      }
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
-    };
+    document.getElementById("pdfHint").textContent =
+      `Facture du centre sportif — ${pages.length} page${pages.length > 1 ? "s" : ""}`;
+
+    const boite = document.getElementById("pdfPages");
+    boite.innerHTML = "";
+    pages.forEach((src, i) => {
+      const img = document.createElement("img");
+      img.src = src;
+      img.alt = `Facture du centre sportif, page ${i + 1}`;
+      img.loading = "lazy";
+      boite.appendChild(img);
+    });
   }
 
   function renderAll() {

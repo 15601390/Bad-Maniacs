@@ -325,6 +325,15 @@ th, td {
   line-height: 1.5;
 }
 
+.modal-input {
+  width: 100%;
+  font-size: 1rem;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
 .modal-actions {
   display: flex;
   gap: 10px;
@@ -942,6 +951,21 @@ function renderJoueurs() {
   actives.forEach((p) => {
     const li = document.createElement("li");
     li.innerHTML = `<span>${escapeHTML(p.name)}</span>`;
+
+    // Renommer conserve l'identifiant, donc tout l'historique de présences.
+    const renameBtn = document.createElement("button");
+    renameBtn.textContent = "Renommer";
+    renameBtn.addEventListener("click", async () => {
+      const nouveau = await askText(`Nouveau nom pour ${p.name} :`, p.name);
+      if (!nouveau || nouveau === p.name) return;
+      p.name = nouveau;
+      saveState();
+      renderJoueurs();
+      renderPointage();
+      renderFacturation();
+    });
+    li.appendChild(renameBtn);
+
     const archiveBtn = document.createElement("button");
     archiveBtn.textContent = "Archiver";
     archiveBtn.addEventListener("click", () => {
@@ -1178,36 +1202,42 @@ document.getElementById("pdfInput").addEventListener("change", async (e) => {
     return;
   }
 
-  // Étape 2 : conserver le PDF, même si l'extraction échoue ensuite.
+  // Étape 2 : convertir la facture en images, seule forme consultable partout.
   const invoice = getInvoice(currentMonth);
+  status.textContent = "Conversion de la facture…";
   try {
+    const pages = await renderPdfPages(buffer.slice(0));
     invoice.fileName = file.name;
-    invoice.pdfData = bufferToDataUrl(buffer, file.type);
-    invoice.pdfSize = buffer.byteLength;
+    invoice.pages = pages;
+    invoice.pagesSize = pages.reduce((s, p) => s + p.length, 0);
+    delete invoice.pdfData; // ancien format : plus publié
+    delete invoice.pdfSize;
     if (!saveState()) {
-      status.textContent = "PDF trop volumineux pour être conservé — voir le message en haut.";
+      status.textContent = "Facture trop volumineuse — voir le message en haut.";
       e.target.value = "";
       return;
     }
   } catch (err) {
     console.error(err);
-    status.textContent = `PDF lu mais non conservé (${err.name || "erreur"}).`;
+    status.textContent = `Conversion impossible : ${err.message || err.name}. Les montants seront quand même extraits.`;
   }
 
-  // Étape 3 : extraction des montants — un échec ici ne perd pas le PDF.
+  // Étape 3 : extraction des montants — un échec ici ne perd pas les images.
   try {
     const parsed = parseInvoiceLines(await extractPdfLines(buffer.slice(0)));
+    const nbPages = (invoice.pages || []).length;
+    const prefixe = nbPages ? `✓ Facture consultable (${nbPages} page${nbPages > 1 ? "s" : ""})` : "Facture non convertie";
     if (parsed.length > 0) {
       invoice.lines = parsed;
       saveState();
-      status.textContent = `✓ PDF conservé et ${parsed.length} ligne(s) extraite(s). Vérifie et corrige si besoin.`;
+      status.textContent = `${prefixe} et ${parsed.length} ligne(s) extraite(s). Vérifie et corrige si besoin.`;
     } else {
-      status.textContent = "✓ PDF conservé, mais aucun montant détecté — ajoute les lignes à la main.";
+      status.textContent = `${prefixe}, mais aucun montant détecté — ajoute les lignes à la main.`;
     }
   } catch (err) {
     console.error(err);
     status.textContent =
-      `✓ PDF conservé, mais l'extraction a échoué — ajoute les lignes à la main. ` +
+      `Facture convertie, mais l'extraction des montants a échoué — ajoute les lignes à la main. ` +
       `Détail : ${err.message || err.name || "erreur inconnue"}`;
   }
 
@@ -1217,23 +1247,47 @@ document.getElementById("pdfInput").addEventListener("change", async (e) => {
 
 document.getElementById("pdfRemoveBtn").addEventListener("click", async () => {
   const invoice = getInvoice(currentMonth);
-  if (!(await askConfirm("Retirer le PDF de ce mois ? Les joueurs ne pourront plus le consulter."))) return;
+  if (!(await askConfirm("Retirer la facture de ce mois ? Les joueurs ne pourront plus la consulter."))) return;
+  delete invoice.pages;
+  delete invoice.pagesSize;
   delete invoice.pdfData;
   delete invoice.pdfSize;
   saveState();
   renderFacturation();
-  document.getElementById("pdfStatus").textContent = "PDF retiré. Les lignes de facture sont conservées.";
+  document.getElementById("pdfStatus").textContent = "Facture retirée. Les lignes sont conservées.";
 });
 
 function renderPdfAttached() {
   const invoice = getInvoice(currentMonth);
   const box = document.getElementById("pdfAttached");
-  const has = Boolean(invoice.pdfData);
-  box.hidden = !has;
-  if (has) {
+  const pages = invoice.pages || [];
+  box.hidden = pages.length === 0;
+  if (pages.length) {
     document.getElementById("pdfAttachedLabel").textContent =
-      `📎 ${invoice.fileName || "facture.pdf"} (${formatBytes(invoice.pdfSize)}) — sera consultable par les joueurs`;
+      `📄 ${invoice.fileName || "facture"} — ${pages.length} page${pages.length > 1 ? "s" : ""} ` +
+      `(${formatBytes(invoice.pagesSize)}), consultable par les joueurs`;
   }
+}
+
+// Rend chaque page en image : c'est ce que verront les joueurs. Un PDF affiché
+// dans une page web est mal rendu par Safari iOS ; une image l'est partout.
+async function renderPdfPages(buffer, largeurCible = 1100) {
+  const pdf = await pdfjsLib.getDocument({ data: buffer, disableWorker: true }).promise;
+  const images = [];
+  for (let n = 1; n <= pdf.numPages; n++) {
+    const page = await pdf.getPage(n);
+    const base = page.getViewport({ scale: 1 });
+    const viewport = page.getViewport({ scale: Math.min(largeurCible / base.width, 2) });
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(viewport.width);
+    canvas.height = Math.round(viewport.height);
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    images.push(canvas.toDataURL("image/jpeg", 0.82));
+  }
+  return images;
 }
 
 async function extractPdfLines(buffer) {
@@ -1622,6 +1676,47 @@ function askConfirm(message) {
 
     document.body.appendChild(overlay);
     overlay.querySelector('[data-choice="oui"]').focus();
+  });
+}
+
+// Saisie de texte : prompt() est bloqué quand l'app tourne en plein écran sur iOS.
+function askText(message, valeurInitiale) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+    overlay.innerHTML = `
+      <div class="modal" role="dialog" aria-modal="true">
+        <p class="modal-text"></p>
+        <input type="text" class="modal-input" />
+        <div class="modal-actions">
+          <button type="button" class="secondary-btn" data-choice="non">Annuler</button>
+          <button type="button" class="primary-btn" data-choice="oui">Valider</button>
+        </div>
+      </div>`;
+    overlay.querySelector(".modal-text").textContent = message;
+    const champ = overlay.querySelector(".modal-input");
+    champ.value = valeurInitiale || "";
+
+    const close = (value) => {
+      overlay.remove();
+      resolve(value);
+    };
+    const valider = () => {
+      const v = champ.value.trim();
+      close(v || null);
+    };
+    overlay.querySelector('[data-choice="oui"]').addEventListener("click", valider);
+    overlay.querySelector('[data-choice="non"]').addEventListener("click", () => close(null));
+    champ.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") valider();
+    });
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) close(null);
+    });
+
+    document.body.appendChild(overlay);
+    champ.focus();
+    champ.select();
   });
 }
 
