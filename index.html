@@ -168,6 +168,11 @@
     padding: 14px;
   }
 
+  /* En 2 colonnes, une tuile orpheline laisserait une case vide grise. */
+  @media (max-width: 520px) {
+    .stat:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  }
+
   .stat-label {
     font-size: 0.7rem;
     font-weight: 700;
@@ -230,6 +235,23 @@
     color: var(--amber);
     min-width: 76px;
     text-align: right;
+  }
+
+  .player-row.paid .player-amount {
+    color: var(--muted);
+    text-decoration: line-through;
+  }
+
+  .paid-chip {
+    display: inline-block;
+    margin-top: 8px;
+    background: var(--court-soft);
+    color: var(--court);
+    border: 1px solid var(--court);
+    border-radius: 999px;
+    padding: 3px 11px;
+    font-size: 0.76rem;
+    font-weight: 700;
   }
 
   .row-toggle {
@@ -496,7 +518,8 @@
   <footer>
     <strong>Comment le montant est calculé :</strong> le total de la facture est divisé par le nombre total de présences du mois, ce qui donne un prix par présence. Chacun paie ce prix multiplié par son nombre de présences — donc plus tu viens, plus tu paies, proportionnellement.<br /><br />
     <strong>Pour payer :</strong> depuis un ordinateur, scanne le QR code avec ton appli bancaire — le virement se pré-remplit. Depuis ton téléphone, où tu ne peux pas scanner ton propre écran, deux options : recopie l'IBAN, le montant et la communication grâce aux boutons « Copier », ou enregistre le QR code dans tes photos et scanne-le depuis ta photothèque (la plupart des applis bancaires le permettent).<br /><br />
-    Vérifie toujours les données affichées par ta banque avant de confirmer.
+    Vérifie toujours les données affichées par ta banque avant de confirmer.<br /><br />
+    <strong>« ✓ Paiement reçu »</strong> apparaît quand Laurent a vu le virement arriver sur son compte. Compte un jour ou deux entre ton virement et l'affichage.
   </footer>
 
 </div>
@@ -635,12 +658,16 @@
 
   function renderStats(s) {
     const el = document.getElementById("stats");
-    el.innerHTML = [
+    const joueurs = Object.keys(s.counts);
+    const payes = (s.invoice.paid || []).filter((id) => joueurs.includes(id)).length;
+    const cases = [
       ["Facture du mois", formatEUR(s.total)],
       ["Dimanches joués", String(s.sundays.length)],
       ["Présences", String(s.totalSlots)],
       ["Par présence", s.totalSlots ? formatEUR(s.rate) : "—"],
-    ].map(([label, value]) =>
+    ];
+    if (joueurs.length) cases.push(["Paiements reçus", `${payes}/${joueurs.length}`]);
+    el.innerHTML = cases.map(([label, value]) =>
       '<div class="stat"><div class="stat-label">' + label + '</div><div class="stat-value">' + value + "</div></div>"
     ).join("");
   }
@@ -664,6 +691,9 @@
       row.className = "player-row";
       row.dataset.name = name.toLowerCase();
 
+      const estPaye = (s.invoice.paid || []).includes(pid);
+      if (estPaye) row.classList.add("paid");
+
       const head = document.createElement("div");
       head.className = "row-head";
       head.innerHTML =
@@ -671,6 +701,15 @@
         '<span class="player-count">' + count + (count > 1 ? " présences" : " présence") + "</span>" +
         '<span class="player-amount">' + formatEUR(amount) + "</span>";
       row.appendChild(head);
+
+      if (estPaye) {
+        const chip = document.createElement("span");
+        chip.className = "paid-chip";
+        chip.textContent = "✓ Paiement reçu";
+        row.appendChild(chip);
+        box.appendChild(row);
+        return;
+      }
 
       const canPay = DATA.payment && DATA.payment.iban && amount >= 0.01;
       if (canPay) {
