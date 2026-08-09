@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-09T13:36:53.910Z",
+  "updatedAt": "2026-08-09T13:37:03.277Z",
   "players": [
     {
       "id": "c5912481-899b-4a08-859e-621c94eff2e2",
@@ -56,7 +56,7 @@
     },
     {
       "id": "1d5713d3-8b85-4165-a17a-9eca8b45c6e4",
-      "name": "Manu 2"
+      "name": "Manu Ber"
     },
     {
       "id": "8d478aec-4fc3-4f73-85e3-f29505ebabe4",
@@ -160,7 +160,7 @@
     }
   },
   "paymentEnc": {
-    "iv": "P9LFSPA7_Ba-Ja_V",
-    "data": "uzdZSqC66GtnFpwrzrs9txGk9OYs9bOPXWbsc571oP4cBNmbGbc8Em_eH1jt_ClK6O7O1i1F2ke0vvlJpUBUDyw9pSrznhTqZpn7aLZPtgZteQWWRRNKLQM"
+    "iv": "Gjp7fxqCPacRW73D",
+    "data": "KAJGF6LLCOJlm2M1iQpfifoFLZWBHtRgoXrfMRb_F85Kr8oCWvGekOnxX3N23vN6oV02HmJifPqoagpdV9_cE6yJqV8naki8agpB25tVV4EMd_SaLYzplZE"
   }
 }
