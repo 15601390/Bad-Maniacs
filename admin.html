@@ -431,7 +431,7 @@ th, td {
 </head>
 <body>
 <header class="topbar">
-  <h1>🏸 Badminton du dimanche</h1>
+  <h1>🏸 Bad-Maniacs — Encodage</h1>
   <nav class="tabs">
     <button class="tab-btn active" data-tab="pointage">Pointage</button>
     <button class="tab-btn" data-tab="facturation">Facturation</button>
@@ -553,7 +553,7 @@ th, td {
       <div class="settings-form">
         <label>
           Nom du bénéficiaire
-          <input type="text" id="payBeneficiary" placeholder="Ex: Laurent Berckmans" />
+          <input type="text" id="payBeneficiary" placeholder="Nom du titulaire du compte" />
         </label>
         <label>
           IBAN
@@ -675,11 +675,9 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = "lib/pdf.worker.min.js";
 
 const STORAGE_KEY = "badminton-app-state-v1";
 
-const DEFAULT_PAYMENT = {
-  beneficiary: "Laurent Berckmans",
-  iban: "BE28 0634 9664 8220",
-  bic: "",
-};
+// Volontairement vide : ce fichier part dans un dépôt public. Le nom et l'IBAN
+// sont saisis sur l'appareil, conservés en local, et publiés uniquement chiffrés.
+const DEFAULT_PAYMENT = { beneficiary: "", iban: "", bic: "" };
 
 // Réglages qui ne quittent jamais cet appareil : jeton d'écriture GitHub et
 // clé de chiffrement. Ils ne partent ni dans l'export, ni dans le dépôt.
@@ -1406,6 +1404,18 @@ async function ghGetFile() {
   return resp.json();
 }
 
+// Empêche une publication de supprimer des données présentes en ligne
+// (typiquement : app vide au démarrage, on coche une case, tout est écrasé).
+async function pushSeraitDestructif(distant) {
+  if (!distant) return null;
+  const idsLocaux = new Set(state.players.map((p) => p.id));
+  const joueursPerdus = (distant.players || []).filter((p) => !idsLocaux.has(p.id)).length;
+  const datesLocales = new Set(Object.keys(state.attendance));
+  const datesPerdues = Object.keys(distant.attendance || {}).filter((d) => !datesLocales.has(d)).length;
+  if (!joueursPerdus && !datesPerdues) return null;
+  return { joueursPerdus, datesPerdues };
+}
+
 async function pushToGitHub() {
   if (!syncConfigured()) {
     setSyncStatus("Synchronisation non configurée — voir les réglages ci-dessus.");
@@ -1414,6 +1424,33 @@ async function pushToGitHub() {
   setSyncStatus("Envoi en cours…");
   try {
     const existant = await ghGetFile();
+
+    if (existant) {
+      let distant = null;
+      try {
+        distant = JSON.parse(
+          new TextDecoder().decode(b64urlToBytes(existant.content.replace(/\n/g, "")))
+        );
+      } catch (err) {
+        console.warn("Contenu distant illisible, contrôle ignoré", err);
+      }
+      const perte = await pushSeraitDestructif(distant);
+      if (perte) {
+        const details = [
+          perte.joueursPerdus ? `${perte.joueursPerdus} joueur(s)` : null,
+          perte.datesPerdues ? `${perte.datesPerdues} pointage(s)` : null,
+        ].filter(Boolean).join(" et ");
+        const ok = await askConfirm(
+          `Publier maintenant supprimerait ${details} présent(s) en ligne mais absent(s) de cet appareil. ` +
+            `Récupère d'abord les données (bouton ↓) si tu ne veux pas les perdre. Publier quand même ?`
+        );
+        if (!ok) {
+          setSyncStatus("Publication annulée — utilise « ↓ Récupérer depuis GitHub ».");
+          return false;
+        }
+      }
+    }
+
     const contenu = JSON.stringify(await buildPublicData(), null, 2);
     const corps = {
       message: `Mise à jour des présences — ${new Date().toLocaleString("fr-BE")}`,
@@ -1749,6 +1786,41 @@ renderJoueurs();
 renderPaymentSettings();
 renderSyncSettings();
 setSyncStatus(syncConfigured() ? "Synchronisation active." : "Synchronisation non configurée.");
+
+// Au démarrage, un appareil vide adopte silencieusement les données en ligne.
+// C'est ce qui rend l'app jetable : les données vivent sur GitHub, pas ici.
+(async function demarrage() {
+  if (!syncConfigured()) return;
+  const vide = state.players.length === 0 && Object.keys(state.attendance).length === 0;
+  if (!vide) return;
+  setSyncStatus("Chargement des données en ligne…");
+  try {
+    const fichier = await ghGetFile();
+    if (!fichier) {
+      setSyncStatus("Aucune donnée en ligne pour l'instant.");
+      return;
+    }
+    const distant = JSON.parse(
+      new TextDecoder().decode(b64urlToBytes(fichier.content.replace(/\n/g, "")))
+    );
+    if (!distant.players) throw new Error("format inattendu");
+    state.players = distant.players.map((p) => ({ ...p, active: p.active !== false }));
+    state.attendance = distant.attendance || {};
+    state.invoices = distant.invoices || {};
+    suspendrePublication = true;
+    saveState();
+    suspendrePublication = false;
+    renderPointage();
+    renderJoueurs();
+    renderFacturation();
+    setSyncStatus(
+      `✓ ${state.players.length} joueurs et ${Object.keys(state.attendance).length} pointages chargés depuis GitHub.`
+    );
+  } catch (err) {
+    console.error(err);
+    setSyncStatus(`Chargement impossible : ${err.message}. Utilise « ↓ Récupérer depuis GitHub ».`);
+  }
+})();
 
 </script>
 </body>
