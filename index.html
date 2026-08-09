@@ -259,13 +259,34 @@
 
   .pay-panel[hidden] { display: none; }
 
+  .qr-col {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    flex: none;
+  }
+
   .qr-box {
     background: #fff;
     padding: 8px;
     border-radius: 8px;
-    flex: none;
   }
   .qr-box svg { display: block; width: 132px; height: 132px; }
+
+  .qr-save {
+    background: var(--card);
+    border: 1px solid var(--line);
+    color: var(--court);
+    font-family: inherit;
+    font-size: 0.76rem;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 7px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .qr-save:hover { background: var(--court-soft); }
 
   .pay-details {
     font-size: 0.84rem;
@@ -278,13 +299,39 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--muted);
-    margin-top: 8px;
+    margin-top: 10px;
   }
   .pay-details dt:first-child { margin-top: 0; }
   .pay-details dd {
     margin: 2px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pay-details dd span {
     font-family: var(--mono);
     overflow-wrap: anywhere;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .copy-btn {
+    flex: none;
+    background: var(--card);
+    border: 1px solid var(--line);
+    color: var(--court);
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 4px 9px;
+    border-radius: 6px;
+    cursor: pointer;
+    min-width: 62px;
+  }
+  .copy-btn:hover { background: var(--court-soft); }
+  .copy-btn:focus-visible, .qr-save:focus-visible {
+    outline: 2px solid var(--court);
+    outline-offset: 2px;
   }
 
   details {
@@ -448,7 +495,8 @@
 
   <footer>
     <strong>Comment le montant est calculé :</strong> le total de la facture est divisé par le nombre total de présences du mois, ce qui donne un prix par présence. Chacun paie ce prix multiplié par son nombre de présences — donc plus tu viens, plus tu paies, proportionnellement.<br /><br />
-    Le QR code de chaque joueur suit la norme européenne EPC : scanne-le depuis ton appli bancaire, le virement se pré-remplit (montant et communication compris). Vérifie toujours les données affichées par ta banque avant de confirmer.
+    <strong>Pour payer :</strong> depuis un ordinateur, scanne le QR code avec ton appli bancaire — le virement se pré-remplit. Depuis ton téléphone, où tu ne peux pas scanner ton propre écran, deux options : recopie l'IBAN, le montant et la communication grâce aux boutons « Copier », ou enregistre le QR code dans tes photos et scanne-le depuis ta photothèque (la plupart des applis bancaires le permettent).<br /><br />
+    Vérifie toujours les données affichées par ta banque avant de confirmer.
   </footer>
 
 </div>
@@ -506,12 +554,52 @@
     ].join("\n");
   }
 
-  function qrSvg(payload) {
+  function construireQr(payload) {
     qrcode.stringToBytes = qrcode.stringToBytesFuncs["UTF-8"];
     const qr = qrcode(0, "M");
     qr.addData(payload, "Byte");
     qr.make();
+    return qr;
+  }
+
+  function qrSvg(qr) {
     return qr.createSvgTag({ cellSize: 3, margin: 2, scalable: true });
+  }
+
+  // Image PNG du QR : sur téléphone, on ne peut pas scanner un code affiché sur
+  // le même écran. Enregistré dans les photos, il devient scannable depuis la
+  // photothèque de l'app bancaire.
+  function qrVersPng(qr, tailleCible = 900) {
+    const modules = qr.getModuleCount();
+    const marge = 4;
+    const total = modules + marge * 2;
+    const cell = Math.max(4, Math.floor(tailleCible / total));
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = total * cell;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#000000";
+    for (let l = 0; l < modules; l++) {
+      for (let c = 0; c < modules; c++) {
+        if (qr.isDark(l, c)) {
+          ctx.fillRect((c + marge) * cell, (l + marge) * cell, cell, cell);
+        }
+      }
+    }
+    return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+  }
+
+  async function copierTexte(valeur, bouton) {
+    const initial = bouton.textContent;
+    try {
+      await navigator.clipboard.writeText(valeur);
+      bouton.textContent = "✓ Copié";
+    } catch (err) {
+      console.error(err);
+      bouton.textContent = "Sélectionne le texte";
+    }
+    setTimeout(() => (bouton.textContent = initial), 1800);
   }
 
   function escapeHtml(s) {
@@ -593,17 +681,71 @@
         btn.textContent = "Payer ma part";
         btn.setAttribute("aria-expanded", "false");
 
+        const qr = construireQr(buildEpcPayload(amount, communication));
+
         const panel = document.createElement("div");
         panel.className = "pay-panel";
         panel.hidden = true;
+
+        // Deux chemins : scanner le QR (depuis un autre appareil), ou recopier
+        // les champs dans son app bancaire (depuis le téléphone qui lit la page).
+        const champs = [
+          ["Bénéficiaire", DATA.payment.beneficiary || "", false],
+          ["IBAN", DATA.payment.iban, true],
+          ["Montant", amount.toFixed(2).replace(".", ","), true],
+          ["Communication", communication, true],
+        ];
+
         panel.innerHTML =
-          '<div class="qr-box">' + qrSvg(buildEpcPayload(amount, communication)) + "</div>" +
+          '<div class="qr-col">' +
+            '<div class="qr-box">' + qrSvg(qr) + "</div>" +
+            '<button type="button" class="qr-save">📷 Enregistrer le QR</button>' +
+          "</div>" +
           '<dl class="pay-details">' +
-          "<dt>Bénéficiaire</dt><dd>" + escapeHtml(DATA.payment.beneficiary || "") + "</dd>" +
-          "<dt>IBAN</dt><dd>" + escapeHtml(DATA.payment.iban) + "</dd>" +
-          "<dt>Montant</dt><dd>" + formatEUR(amount) + "</dd>" +
-          "<dt>Communication</dt><dd>" + escapeHtml(communication) + "</dd>" +
+            champs.map(([label, valeur, copiable]) =>
+              "<dt>" + label + "</dt><dd>" +
+              "<span>" + escapeHtml(valeur) + "</span>" +
+              (copiable ? '<button type="button" class="copy-btn" data-valeur="' + escapeHtml(valeur).replace(/"/g, "&quot;") + '">Copier</button>' : "") +
+              "</dd>"
+            ).join("") +
           "</dl>";
+
+        panel.querySelectorAll(".copy-btn").forEach((b) => {
+          b.addEventListener("click", () => copierTexte(b.dataset.valeur, b));
+        });
+
+        const boutonQr = panel.querySelector(".qr-save");
+        boutonQr.addEventListener("click", async () => {
+          const initial = boutonQr.textContent;
+          boutonQr.textContent = "…";
+          try {
+            const blob = await qrVersPng(qr);
+            const fichier = new File([blob], `paiement-${name.replace(/\s+/g, "-")}.png`, { type: "image/png" });
+            if (navigator.canShare && navigator.canShare({ files: [fichier] })) {
+              await navigator.share({ files: [fichier], title: communication });
+              boutonQr.textContent = initial;
+              return;
+            }
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = fichier.name;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 30000);
+            boutonQr.textContent = "✓ Enregistré";
+          } catch (err) {
+            if (!err || err.name !== "AbortError") {
+              console.error(err);
+              boutonQr.textContent = "Échec";
+            } else {
+              boutonQr.textContent = initial;
+              return;
+            }
+          }
+          setTimeout(() => (boutonQr.textContent = initial), 2000);
+        });
 
         btn.addEventListener("click", () => {
           const open = panel.hidden;
