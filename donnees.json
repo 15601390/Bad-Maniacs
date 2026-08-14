@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-14T07:50:08.631Z",
+  "updatedAt": "2026-08-14T08:00:14.552Z",
   "players": [
     {
       "id": "c5912481-899b-4a08-859e-621c94eff2e2",
@@ -120,11 +120,6 @@
       "41a5c376-f79d-4b1a-981e-e38adade1c5d",
       "5c69dedc-7ac8-4526-8567-2f8d637ee41c",
       "6f00f2c7-22ed-4850-8081-fd9f96850ec3"
-    ],
-    "2026-07-12": [
-      "8d478aec-4fc3-4f73-85e3-f29505ebabe4",
-      "41a5c376-f79d-4b1a-981e-e38adade1c5d",
-      "ff14763a-e58e-4420-b177-8e43bcecd8f0"
     ]
   },
   "invoices": {
@@ -182,10 +177,14 @@
     "2026-05": {
       "lines": [],
       "fileName": "INVOICE1246491181.pdf"
+    },
+    "2026-07": {
+      "lines": [],
+      "fileName": null
     }
   },
   "paymentEnc": {
-    "iv": "1GJi_RCHhgcZJyzt",
-    "data": "rc6ChB6-VT_sOphezj_GGbiFZZO_jGH6lZ7ALMMa1zeArzEshSEu8MnTEClVDqLRU9JIn17MXOYqH4MBh_U_Zsw338fcrJgqQaBlv9acTYaeVm3-vL-G-a0"
+    "iv": "PN4t2-4E6a-IFVV3",
+    "data": "eRQXAZ6qJahoUvro2Lly-jfog-NuSLZLxxtmeAVU5I8AkgRSTuETyRnOMfbkBW84rUOa189L0wHF4zYaCSp1EV_aikT5e6IY-PudxwbcTWQf6ldlB_xlPTI"
   }
 }
