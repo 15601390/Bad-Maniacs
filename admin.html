@@ -677,8 +677,8 @@ th, td {
 
       <div id="configLinkBox" class="config-link" hidden>
         <h3>🔒 Raccourci de secours</h3>
-        <p class="muted">iOS peut vider le stockage de Safari et effacer ces réglages. Ce lien les contient : ajoute-le à ton écran d'accueil et l'app se reconfigurera toute seule si ça arrive.</p>
-        <p class="muted"><strong>Ne le partage avec personne</strong> — il contient ton jeton d'écriture.</p>
+        <p class="muted">iOS peut vider le stockage de Safari et effacer tes réglages. Ce lien contient la synchronisation <strong>et</strong> tes coordonnées de paiement : ajoute-le à ton écran d'accueil et l'app se reconfigurera toute seule si ça arrive.</p>
+        <p class="muted"><strong>Ne le partage avec personne</strong> — il contient ton jeton d'écriture et ton IBAN.</p>
         <div class="backup-actions">
           <button id="configCopyBtn" class="primary-btn">⧉ Copier le lien de secours</button>
           <button id="configShowBtn" class="secondary-btn">Afficher</button>
@@ -1507,6 +1507,7 @@ function renderPaymentSettings() {
   document.getElementById(id).addEventListener("input", (e) => {
     state.payment[key] = e.target.value;
     saveState();
+    renderPlayerLink(); // le lien de secours doit refléter le nouvel IBAN
     document.getElementById("paymentStatus").textContent = "✓ Enregistré";
   });
 });
@@ -1553,9 +1554,25 @@ async function encryptPayment(payment, keyB64) {
 
 const SYNC_PATH = "donnees.json";
 
+// Sans nom ni IBAN, les QR codes des joueurs seraient inutilisables.
+function isPaymentConfigured(payment) {
+  return Boolean(payment && payment.beneficiary && payment.iban);
+}
+
+// AES-GCM exige exactement 32 octets. Une clé recopiée à la main et tronquée
+// échouerait au chiffrement : autant le dire tout de suite.
+function cleValide(key) {
+  if (!key) return false;
+  try {
+    return b64urlToBytes(key).length === 32;
+  } catch (err) {
+    return false;
+  }
+}
+
 function syncConfigured() {
   const s = state.sync;
-  return Boolean(s && s.owner && s.repo && s.token && s.key);
+  return Boolean(s && s.owner && s.repo && s.token && cleValide(s.key));
 }
 
 function setSyncStatus(message) {
@@ -1564,14 +1581,20 @@ function setSyncStatus(message) {
 }
 
 // Ce qui part sur GitHub : jamais le jeton, jamais la clé, jamais l'IBAN en clair.
-async function buildPublicData() {
+// `paiementDistant` : bloc chiffré déjà en ligne. Si l'IBAN local est vide
+// (stockage purgé, réglages pas encore ressaisis), on le conserve plutôt que de
+// publier un bloc vide qui casserait les QR codes des joueurs.
+async function buildPublicData(paiementDistant) {
+  const paiementUtilisable = isPaymentConfigured(state.payment);
   return {
     version: 1,
     updatedAt: new Date().toISOString(),
     players: state.players.map((p) => ({ id: p.id, name: p.name })),
     attendance: state.attendance,
     invoices: state.invoices,
-    paymentEnc: await encryptPayment(state.payment, state.sync.key),
+    paymentEnc: paiementUtilisable
+      ? await encryptPayment(state.payment, state.sync.key)
+      : paiementDistant || null,
   };
 }
 
@@ -1645,7 +1668,21 @@ async function pushToGitHub() {
       }
     }
 
-    const contenu = JSON.stringify(await buildPublicData(), null, 2);
+    let paiementDistant = null;
+    if (existant) {
+      try {
+        paiementDistant = JSON.parse(
+          new TextDecoder().decode(b64urlToBytes(existant.content.replace(/\n/g, "")))
+        ).paymentEnc || null;
+      } catch (err) {
+        console.warn("Bloc de paiement distant illisible", err);
+      }
+    }
+    if (!isPaymentConfigured(state.payment) && paiementDistant) {
+      setSyncStatus("Envoi en cours… (IBAN absent ici : celui déjà en ligne est conservé)");
+    }
+
+    const contenu = JSON.stringify(await buildPublicData(paiementDistant), null, 2);
     const corps = {
       message: `Mise à jour des présences — ${new Date().toLocaleString("fr-BE")}`,
       content: bytesToB64(new TextEncoder().encode(contenu)),
@@ -1732,13 +1769,17 @@ function schedulePush() {
 // serveur, et restauré automatiquement si le stockage a été vidé.
 function encoderConfig() {
   const { owner, repo, token, key } = state.sync;
-  const json = JSON.stringify({ o: owner, r: repo, t: token, k: key });
+  const { beneficiary, iban, bic } = state.payment;
+  const json = JSON.stringify({
+    o: owner, r: repo, t: token, k: key,
+    b: beneficiary, i: iban, c: bic,
+  });
   return bytesToB64url(new TextEncoder().encode(json));
 }
 
 function lienConfiguration() {
   if (!syncConfigured()) return null;
-  const base = location.href.split("#")[0];
+  const base = location.href.split("#")[0].split("?")[0];
   return `${base}#cfg=${encoderConfig()}`;
 }
 
@@ -1747,12 +1788,15 @@ function restaurerConfigDepuisLien() {
   if (!m) return false;
   try {
     const c = JSON.parse(new TextDecoder().decode(b64urlToBytes(m[1])));
-    const avant = JSON.stringify(state.sync);
+    const avant = JSON.stringify([state.sync, state.payment]);
     if (c.o) state.sync.owner = c.o;
     if (c.r) state.sync.repo = c.r;
     if (c.t) state.sync.token = c.t;
     if (c.k) state.sync.key = c.k;
-    if (JSON.stringify(state.sync) === avant) return false;
+    if (c.b) state.payment.beneficiary = c.b;
+    if (c.i) state.payment.iban = c.i;
+    if (c.c) state.payment.bic = c.c;
+    if (JSON.stringify([state.sync, state.payment]) === avant) return false;
     suspendrePublication = true;
     saveState();
     suspendrePublication = false;
@@ -1794,6 +1838,8 @@ function renderSyncSettings() {
       // Les réglages viennent d'être complétés : si l'appareil est vide, on
       // charge sans attendre un rechargement de page.
       chargerSiVide();
+    } else if (state.sync.key && !cleValide(state.sync.key)) {
+      setSyncStatus("Clé invalide : elle doit faire 43 caractères. Recopie-la en entier ou régénère-la.");
     } else {
       setSyncStatus("Réglages incomplets.");
     }
