@@ -263,6 +263,36 @@ th, td {
   font-weight: 400;
 }
 
+.config-link {
+  margin-top: 16px;
+  padding: 14px;
+  background: var(--amber-soft, #f6eadb);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 10px 10px 0;
+}
+
+.config-link h3 {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+}
+
+.config-link p { margin: 0 0 8px; }
+
+.config-link code {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.7rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-top: 10px;
+  overflow-wrap: anywhere;
+  user-select: all;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
 .player-link {
   margin-top: 16px;
   padding: 14px;
@@ -644,6 +674,17 @@ th, td {
         <button id="pullBtn" class="secondary-btn">↓ Récupérer depuis GitHub</button>
       </div>
       <span id="syncStatus" class="muted"></span>
+
+      <div id="configLinkBox" class="config-link" hidden>
+        <h3>🔒 Raccourci de secours</h3>
+        <p class="muted">iOS peut vider le stockage de Safari et effacer ces réglages. Ce lien les contient : ajoute-le à ton écran d'accueil et l'app se reconfigurera toute seule si ça arrive.</p>
+        <p class="muted"><strong>Ne le partage avec personne</strong> — il contient ton jeton d'écriture.</p>
+        <div class="backup-actions">
+          <button id="configCopyBtn" class="primary-btn">⧉ Copier le lien de secours</button>
+          <button id="configShowBtn" class="secondary-btn">Afficher</button>
+        </div>
+        <code id="configLinkText" hidden></code>
+      </div>
 
       <div id="playerLinkBox" class="player-link" hidden>
         <h3>Lien pour les joueurs</h3>
@@ -1686,6 +1727,54 @@ function schedulePush() {
   pushTimer = setTimeout(pushToGitHub, 4000);
 }
 
+// iOS purge le stockage local sans prévenir (inactivité, espace disque). Les
+// réglages sont donc aussi transportés dans le # du raccourci : jamais envoyé au
+// serveur, et restauré automatiquement si le stockage a été vidé.
+function encoderConfig() {
+  const { owner, repo, token, key } = state.sync;
+  const json = JSON.stringify({ o: owner, r: repo, t: token, k: key });
+  return bytesToB64url(new TextEncoder().encode(json));
+}
+
+function lienConfiguration() {
+  if (!syncConfigured()) return null;
+  const base = location.href.split("#")[0];
+  return `${base}#cfg=${encoderConfig()}`;
+}
+
+function restaurerConfigDepuisLien() {
+  const m = location.hash.match(/cfg=([A-Za-z0-9\-_]+)/);
+  if (!m) return false;
+  try {
+    const c = JSON.parse(new TextDecoder().decode(b64urlToBytes(m[1])));
+    const avant = JSON.stringify(state.sync);
+    if (c.o) state.sync.owner = c.o;
+    if (c.r) state.sync.repo = c.r;
+    if (c.t) state.sync.token = c.t;
+    if (c.k) state.sync.key = c.k;
+    if (JSON.stringify(state.sync) === avant) return false;
+    suspendrePublication = true;
+    saveState();
+    suspendrePublication = false;
+    return true;
+  } catch (err) {
+    console.error(err);
+    return false;
+  }
+}
+
+// Demande au navigateur de ne pas purger ce stockage. Non garanti, mais gratuit.
+async function demanderStockagePersistant() {
+  try {
+    if (navigator.storage && navigator.storage.persist) {
+      const dejaAccorde = await navigator.storage.persisted();
+      if (!dejaAccorde) await navigator.storage.persist();
+    }
+  } catch (err) {
+    console.warn("Stockage persistant indisponible", err);
+  }
+}
+
 function renderSyncSettings() {
   document.getElementById("syncOwner").value = state.sync.owner || "";
   document.getElementById("syncRepo").value = state.sync.repo || "";
@@ -1736,7 +1825,30 @@ function renderPlayerLink() {
   const boite = document.getElementById("playerLinkBox");
   boite.hidden = !lien;
   if (lien) document.getElementById("playerLinkText").textContent = lien;
+
+  const config = lienConfiguration();
+  const boiteConfig = document.getElementById("configLinkBox");
+  boiteConfig.hidden = !config;
+  if (config) document.getElementById("configLinkText").textContent = config;
 }
+
+document.getElementById("configCopyBtn").addEventListener("click", async () => {
+  const lien = lienConfiguration();
+  if (!lien) return;
+  try {
+    await navigator.clipboard.writeText(lien);
+    setSyncStatus("✓ Lien de secours copié. Ouvre-le dans Safari, puis « Sur l'écran d'accueil ».");
+  } catch (err) {
+    document.getElementById("configLinkText").hidden = false;
+    setSyncStatus("Copie refusée : le lien est affiché, sélectionne-le à la main.");
+  }
+});
+
+document.getElementById("configShowBtn").addEventListener("click", (e) => {
+  const champ = document.getElementById("configLinkText");
+  champ.hidden = !champ.hidden;
+  e.target.textContent = champ.hidden ? "Afficher" : "Masquer";
+});
 
 document.getElementById("shareLinkBtn").addEventListener("click", async () => {
   const lien = lienJoueurs();
@@ -2042,12 +2154,22 @@ function escapeAttr(str) {
 
 // ---------- Init ----------
 
+// Avant tout : si le raccourci porte les réglages, on les remet en place.
+const configRestauree = restaurerConfigDepuisLien();
+demanderStockagePersistant();
+
 renderPointage();
 renderJoueurs();
 renderPaymentSettings();
 renderSyncSettings();
 renderPlayerLink();
-setSyncStatus(syncConfigured() ? "Synchronisation active." : "Synchronisation non configurée.");
+setSyncStatus(
+  configRestauree
+    ? "✓ Réglages restaurés depuis le raccourci."
+    : syncConfigured()
+    ? "Synchronisation active."
+    : "Synchronisation non configurée."
+);
 
 // Un appareil vide adopte les données en ligne : au démarrage, et aussi dès que
 // les réglages sont complétés (sinon il faudrait recharger la page).
