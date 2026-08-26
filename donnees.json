@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-26T17:24:00.262Z",
+  "updatedAt": "2026-08-26T17:24:22.822Z",
   "players": [
     {
       "id": "c5912481-899b-4a08-859e-621c94eff2e2",
@@ -226,12 +226,13 @@
         "5c69dedc-7ac8-4526-8567-2f8d637ee41c",
         "6f00f2c7-22ed-4850-8081-fd9f96850ec3",
         "8d478aec-4fc3-4f73-85e3-f29505ebabe4",
-        "41a5c376-f79d-4b1a-981e-e38adade1c5d"
+        "41a5c376-f79d-4b1a-981e-e38adade1c5d",
+        "ff14763a-e58e-4420-b177-8e43bcecd8f0"
       ]
     }
   },
   "paymentEnc": {
-    "iv": "y7d8jhYA7Boqqmeq",
-    "data": "FFqlVkUWLDLdngJfX7jx5wQ5xHjSk3JQ1cFyZomWcYpVgiJWSEKqFnmEgrypCbbzBlUqIjceWmU9ATci4gQwRO1zNf_TPYdH4AjKJ22pCWmaUsS1zOlyWBI"
+    "iv": "-sV7MOdRlE35YbXx",
+    "data": "T1y7JzO4_s5qhHKMzRcsMUzf-XuOivCbjE8T4FlW860ybE_Yrdr-Sna1z8zi9fTmgbkJ25igRVyjZUdCl4b-1k-3htkQZXoBGOeJ35xcqD21K5mIz5GZ3gA"
   }
 }
