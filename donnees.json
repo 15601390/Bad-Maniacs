@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-16T05:46:48.280Z",
+  "updatedAt": "2026-09-22T14:39:44.833Z",
   "players": [
     {
       "id": "c5912481-899b-4a08-859e-621c94eff2e2",
@@ -171,6 +171,14 @@
       "8d2edbd6-32e8-4673-8a55-90fecdf2ede3",
       "a45d43e2-37c4-4611-b23e-297478a852db",
       "41a5c376-f79d-4b1a-981e-e38adade1c5d",
+      "5c69dedc-7ac8-4526-8567-2f8d637ee41c",
+      "cb9ee0dd-4b81-464d-8e15-793337e5eb96"
+    ],
+    "2026-09-20": [
+      "8d2edbd6-32e8-4673-8a55-90fecdf2ede3",
+      "d70d4c75-b9a9-4f14-9e13-b28309e1dc02",
+      "8d478aec-4fc3-4f73-85e3-f29505ebabe4",
+      "41a5c376-f79d-4b1a-981e-e38adade1c5d",
       "5c69dedc-7ac8-4526-8567-2f8d637ee41c"
     ]
   },
@@ -319,7 +327,7 @@
     }
   },
   "paymentEnc": {
-    "iv": "QveGlEC5e2k-Vf-T",
-    "data": "e-XnqQqFnPKP9QI6JKWFwZEcUaosnEeIPzbcfx2Fl8N4I9zY9OFV0OtR2LH1lRMuFnKEG_jtk2fRluq8m0Ct9Lt16Nb8V9x7ADikmFv0JIvMxXAAMwg3PFs"
+    "iv": "cs4rLvztwAV1y1tM",
+    "data": "QsUUXgFn2ydQ-LhjlIZvGfNALqN_rsNNb42MEWHz39PPmK5e0AbRRzFKSMm8NFff8y1ze-P29M8uO51APDTOMVvBqk8N4oOCSfdVvx7rMFwMM7iC-N08myU"
   }
 }
