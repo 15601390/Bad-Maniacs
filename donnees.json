@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-13T04:02:59.407Z",
+  "updatedAt": "2026-10-13T04:03:04.806Z",
   "players": [
     {
       "id": "c5912481-899b-4a08-859e-621c94eff2e2",
@@ -364,10 +364,6 @@
           "amount": 27
         },
         {
-          "description": "- Dimanche 27/09/2026 18:00-20:00 - H133 - Badminton",
-          "amount": 27
-        },
-        {
           "description": "- Dimanche 27/09/2026 18:00-20:00 - H132 - Badminton",
           "amount": 27
         },
@@ -388,7 +384,7 @@
     }
   },
   "paymentEnc": {
-    "iv": "wA7pKSXDPDaS1CLq",
-    "data": "4fHWyYZS6v0rP0iS-zaY-J0nVvSzprvklLQtARYR9Gt8us0tMhVTtWQTQFMeSaZ9YvLm9zOJqKQNB9_z-YeCfB6I8gGclzXp58VH1D3QggVC0Y94NSm3RCU"
+    "iv": "fp5qat6M5LKtki0l",
+    "data": "RRQBs5HKShZEx-mXC_FV4SRw7p95rEU8QARw5kxDTZg-Cp-f_-_aqFcoxW9U9Ikc1w4t3wx49Sf1TudhAVGkwZj5ViKVmVYDAhNQYcBL8e4B6CgrZVL4nTo"
   }
 }
