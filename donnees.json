@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-13T04:04:24.989Z",
+  "updatedAt": "2026-10-13T04:05:16.086Z",
   "players": [
     {
       "id": "c5912481-899b-4a08-859e-621c94eff2e2",
@@ -380,11 +380,12 @@
     },
     "2026-10": {
       "lines": [],
-      "fileName": null
+      "fileName": null,
+      "paid": []
     }
   },
   "paymentEnc": {
-    "iv": "Sz6X9T0DBFPfU3Eh",
-    "data": "VUZ2HVyXJp221YsjXiaObWQQVBUkOKj8oGOoWAFOVP2m1sy9l8y6pC60QTyClfy7VSo2FEjoVFu3M2RbDEWmBjo44lUGpMU27AzmAu9F8w8XaRcMc-QtaLE"
+    "iv": "ROup1ufBr5-7Wehj",
+    "data": "lRk9wxbu6XHCkCs_iI37mRc7NJ-9UvOw16KViavopBdvlZW-9xskgs9CMSuxQUppxQwfct5wNtfT_-BaLuCToxiI2tcw-fr9i-oBu0twsZ0iHAOAgZlPACE"
   }
 }
