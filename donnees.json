@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-05T16:24:11.309Z",
+  "updatedAt": "2026-11-05T16:24:54.112Z",
   "players": [
     {
       "id": "c5912481-899b-4a08-859e-621c94eff2e2",
@@ -468,10 +468,6 @@
         {
           "description": "Badminton / Pickelball - 1h 27,00 € 1",
           "amount": 27
-        },
-        {
-          "description": "Badminton / Pickelball - 1h 27,00 € 1",
-          "amount": 27
         }
       ],
       "fileName": "octobre 2026.pdf",
@@ -488,7 +484,7 @@
     }
   },
   "paymentEnc": {
-    "iv": "q7xhc9VyZc0wZGQS",
-    "data": "u8oEPRJKWEgmwQt37PY5BN0qS5IDPirIkBa7VfjYz5t1_tTwb3yZl5RrWZmg_5qe6wUiHX1Q_4sI0JvQ8M0hYDtN9qe5b8vyajpy-d3PQDb7VpNe4Dls-QY"
+    "iv": "tEJe4yGOS8fvbye6",
+    "data": "mLmbZjcjbdPqwXwclT8oE09aKFxu1xfWrTS716vEBc9zVB9OUsexudfzLAxheDE274tC4KobS42RjhCG1Ks8jT9N0ccLh9tYB_LhfQ-kpvqkk4-ElWprLbo"
   }
 }
