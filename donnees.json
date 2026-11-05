@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-05T16:12:58.629Z",
+  "updatedAt": "2026-11-05T16:17:47.204Z",
   "players": [
     {
       "id": "c5912481-899b-4a08-859e-621c94eff2e2",
@@ -421,17 +421,22 @@
       ],
       "pagesSize": 284539,
       "paid": [
-        "c5912481-899b-4a08-859e-621c94eff2e2"
+        "c5912481-899b-4a08-859e-621c94eff2e2",
+        "d70d4c75-b9a9-4f14-9e13-b28309e1dc02"
       ]
     },
     "2026-10": {
       "lines": [],
       "fileName": null,
       "paid": []
+    },
+    "2026-11": {
+      "lines": [],
+      "fileName": null
     }
   },
   "paymentEnc": {
-    "iv": "9K8CkemsK3CzJOVg",
-    "data": "dzTwuTpjOBrx-dgKGyMArOSgShs95odqMMf2jzyjsnPBGByGSUckhsBtGQzEmFx3v5aAKiAGrqTWPiE4HVF-pjsWIPvwbuOKChPsWIt20pusBV-5P-fg0G0"
+    "iv": "Fgetge7cPSD6die-",
+    "data": "1YThzzWWy8pepz1M9h1KvaS4So_LPuW6chBd9OUyEmET8IdBDUxOwWGO7oqiY7MbjfzmPIGny42TTJ_Z2AqV9LfRdVP3W7tVO344qsHA2zaVgRQFM62DCJE"
   }
 }
