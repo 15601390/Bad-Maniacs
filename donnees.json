@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-13T15:32:34.667Z",
+  "updatedAt": "2026-11-13T15:32:43.709Z",
   "players": [
     {
       "id": "c5912481-899b-4a08-859e-621c94eff2e2",
@@ -505,7 +505,7 @@
     }
   },
   "paymentEnc": {
-    "iv": "p6aZFSqg3RK8tR_3",
-    "data": "bZ4AHF4A0quMQzqVFx4FwzNyAku8OD3tJpySKbJkl2aIPageZ0ZUNXHSArud6oRDXaZiHsaoFhQ2RbHvIWATmA78XmzS8pHk8FQLX8hm8UjwXK_17LZua04"
+    "iv": "tQklyRQ79ZAm3spv",
+    "data": "joYSvB64enwNnWOYfaCfI-PN8F2SWCRDXC_uonP1RevWCBl1Y3FT79AHSWyPpLen9plOKNNW0uYOjEEOekFIb08lwz0Qy06DWoSmDXaD7YpB5ZGbh4_N5d0"
   }
 }
